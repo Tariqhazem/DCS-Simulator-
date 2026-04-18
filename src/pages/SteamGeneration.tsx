@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Faceplate } from '../components/Faceplate';
 import { Indicator } from '../components/Indicator';
 import { Valve } from '../components/Valve';
-import { createInitialState, tick, SimState, ControllerSnapshot } from '../sim/model';
+import { createInitialState, tick, SimState, ControllerSnapshot, InstructorScenarios } from '../sim/model';
+import { InstructorPanel, ScenarioBanner } from '../components/InstructorPanel';
 
 /** Steam Generation (page 16_04) — replica of uploaded Honeywell screen.
  *  Live loops: LIC0011A, LIC0011B (drum level), SLIC0063 (flash-drum level).
@@ -38,11 +39,17 @@ interface LoopDialogState {
 export function SteamGeneration() {
   const [sim, setSim] = useState<SimState>(() => createInitialState());
   const [dialog, setDialog] = useState<LoopDialogState | null>(null);
+  const [instrOpen, setInstrOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setSim(s => tick(s, 0.1)), 100);
     return () => clearInterval(id);
   }, []);
+
+  const updateScenario = (patch: Partial<InstructorScenarios>) =>
+    setSim(s => ({ ...s, scen: { ...s.scen, ...patch } }));
+
+  const resetSim = () => setSim(createInitialState());
 
   const openDialog = (key: LoopKey) => {
     const ctrl = sim[key];
@@ -285,6 +292,16 @@ export function SteamGeneration() {
           swell: {sim.drumSwell.toFixed(2)}%
         </span>
       </div>
+
+      {/* ================== INSTRUCTOR PANEL + BANNER ================== */}
+      <ScenarioBanner scen={sim.scen} />
+      <InstructorPanel
+        open={instrOpen}
+        scen={sim.scen}
+        onToggle={() => setInstrOpen(o => !o)}
+        onChange={updateScenario}
+        onResetSim={resetSim}
+      />
 
       {/* ================== UNIFIED LOOP DIALOG ================== */}
       {dialog && (

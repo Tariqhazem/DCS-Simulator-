@@ -295,3 +295,130 @@ html, body, #root {
   cursor: pointer;
 }
 .disturb-btn:hover { background: linear-gradient(#5b7b88, #44626e); }
+
+/* ---------- instructor panel ---------- */
+.instr-tab {
+  position: fixed;
+  right: 0;
+  top: 160px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  background: linear-gradient(#7a2f2f, #521f1f);
+  color: #fff;
+  border: 1px solid #000;
+  border-right: none;
+  padding: 10px 6px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  z-index: 90;
+}
+.instr-tab.active { background: linear-gradient(#a04040, #6a2828); }
+
+.instr-panel {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  bottom: 20px;
+  width: 360px;
+  background: #1a1a1a;
+  border-left: 1px solid #000;
+  color: #fff;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  padding: 0;
+  transform: translateX(100%);
+  transition: transform 0.25s ease-out;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.instr-panel.open { transform: translateX(0); }
+.instr-panel header {
+  background: linear-gradient(#7a2f2f, #521f1f);
+  padding: 8px 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.instr-panel header .close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.instr-panel footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid #000;
+}
+
+.instr-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid #000;
+}
+.instr-lbl {
+  color: #e6e6e6;
+  font-size: 11px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.instr-help {
+  color: #9fb7bf;
+  font-size: 10px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.instr-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scen-btn {
+  background: linear-gradient(#4b6b78, #34525e);
+  color: #fff;
+  border: 1px solid #000;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.scen-btn.active {
+  background: linear-gradient(#a04040, #6a2828);
+  color: #fff;
+  font-weight: 700;
+}
+.scen-btn.danger { background: linear-gradient(#c5890e, #7a5409); }
+.scen-btn:hover { filter: brightness(1.15); }
+
+.scen-banner {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #a04040;
+  color: #fff;
+  padding: 4px 14px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border: 1px solid #000;
+  border-top: none;
+  z-index: 70;
+  animation: scenPulse 1.2s ease-in-out infinite;
+}
+@keyframes scenPulse {
+  0%, 100% { background: #a04040; }
+  50%      { background: #d05050; }
+}
