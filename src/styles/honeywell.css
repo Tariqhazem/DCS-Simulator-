@@ -1,0 +1,285 @@
+/* Honeywell Experion HMIWeb look-alike theme.
+   Colors chosen to match the steam-generation screenshot:
+   - slate/teal background
+   - cyan PV, green SP, yellow OP
+   - red = hot/steam, cyan = BFW, dark blue = cooling water
+   - alarm state: red flash, yellow high/low, green OK */
+
+:root {
+  --bg: #4a7a8c;            /* Experion teal/slate field */
+  --panel: #2b2b2b;
+  --panel-dk: #1a1a1a;
+  --border: #000;
+  --text: #e6e6e6;
+  --text-dim: #b8b8b8;
+
+  --sp: #00e64d;            /* green - setpoint */
+  --pv: #00e5ff;            /* cyan - process variable */
+  --op: #ffeb3b;            /* yellow - controller output */
+
+  --steam: #e02424;         /* red - steam / hot */
+  --bfw:   #00b4d8;         /* cyan - BFW */
+  --cw:    #0051a8;         /* dark blue - cooling water */
+  --util:  #8a8a8a;         /* grey - utilities */
+
+  --valve-open:   #16a34a;  /* green */
+  --valve-closed: #dc2626;  /* red */
+  --valve-mid:    #eab308;  /* yellow */
+
+  --alarm-hi: #ffeb3b;
+  --alarm-hihi: #ff4d4d;
+  --alarm-ok: #16a34a;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+/* ---------- title / tab bar (replaces the removed menu bar) ---------- */
+.titlebar {
+  display: flex;
+  align-items: stretch;
+  height: 56px;
+  background: #1f4a5a;
+  border-bottom: 1px solid #000;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+.titlebar .title {
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  background: #143844;
+  border-right: 1px solid #000;
+  min-width: 220px;
+}
+.titlebar .tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+}
+.tab {
+  padding: 6px 12px;
+  background: linear-gradient(#4b6b78, #34525e);
+  border: 1px solid #0a1a22;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 56px;
+  text-align: center;
+}
+.tab:hover { background: linear-gradient(#5b7b88, #44626e); }
+.tab.active { background: linear-gradient(#c9c9c9, #8f8f8f); color: #000; }
+.tab.page-id { background: #0b2a34; color: #7ad7e8; border-color: #000; font-family: 'Consolas', monospace; }
+
+.alarm-summary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 12px;
+  background: #1a3a46;
+  color: #e6e6e6;
+  font-size: 11px;
+  border-left: 1px solid #000;
+}
+.alarm-cell { display: flex; flex-direction: column; line-height: 1.2; }
+.alarm-cell .k { color: #9fb7bf; font-size: 10px; }
+.alarm-cell .v { color: #fff; }
+.alarm-badge {
+  background: #a00;
+  color: #fff;
+  padding: 1px 6px;
+  border: 1px solid #000;
+  font-weight: 700;
+}
+
+/* ---------- main workspace ---------- */
+.workspace {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 56px - 20px);
+  overflow: hidden;
+}
+.statusbar {
+  height: 20px;
+  background: #1f4a5a;
+  border-top: 1px solid #000;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  gap: 16px;
+  color: #cfe2e8;
+}
+
+/* ---------- faceplate (Honeywell PKS controller block) ---------- */
+.faceplate {
+  background: #000;
+  border: 1px solid #000;
+  color: #fff;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.25;
+  padding: 0;
+  min-width: 120px;
+  cursor: pointer;
+  user-select: none;
+}
+.faceplate .fp-head {
+  display: flex;
+  align-items: center;
+  background: #2b2b2b;
+  border-bottom: 1px solid #000;
+  padding: 2px 4px;
+  gap: 4px;
+}
+.faceplate .fp-mode {
+  background: #1565c0;
+  color: #fff;
+  padding: 0 5px;
+  font-weight: 700;
+  border: 1px solid #000;
+}
+.faceplate .fp-mode.man { background: #c8a100; color: #000; }
+.faceplate .fp-tag {
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+.faceplate .fp-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  padding: 1px 4px;
+  column-gap: 4px;
+}
+.faceplate .fp-row .lbl { color: #9fb7bf; }
+.faceplate .fp-row.sp .val { color: var(--sp); text-align: right; }
+.faceplate .fp-row.pv .val { color: var(--pv); text-align: right; }
+.faceplate .fp-row.op .val { color: var(--op); text-align: right; }
+.faceplate .fp-row .unit { color: #9fb7bf; text-align: left; }
+.faceplate.live { outline: 1px solid #00e5ff; }
+
+/* ---------- indicator (read-only tag box) ---------- */
+.indicator {
+  display: inline-flex;
+  flex-direction: column;
+  background: #000;
+  border: 1px solid #000;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  min-width: 56px;
+}
+.indicator .ind-tag {
+  background: #2b2b2b;
+  color: #fff;
+  padding: 1px 4px;
+  border-bottom: 1px solid #000;
+  font-size: 10px;
+}
+.indicator .ind-val {
+  color: var(--pv);
+  padding: 1px 4px;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* ---------- pill (left-side source/destination nav) ---------- */
+.pill {
+  display: inline-block;
+  background: #1a9d3f;
+  color: #fff;
+  border: 1px solid #000;
+  font-size: 10px;
+  padding: 1px 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pill.right { background: #1a9d3f; }
+.pill.grey { background: #6e6e6e; }
+
+/* ---------- process SVG canvas ---------- */
+.pid-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.label-text {
+  fill: #e6e6e6;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+}
+.label-tag {
+  fill: #ffffff;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ---------- placeholder pages ---------- */
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #cfe2e8;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* SP-change modal (operator input) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: #1a1a1a;
+  border: 1px solid #000;
+  color: #fff;
+  padding: 14px 16px;
+  min-width: 240px;
+  font-family: 'Consolas', monospace;
+}
+.modal h4 { margin: 0 0 8px; font-size: 12px; color: #9fb7bf; letter-spacing: 0.5px; }
+.modal input, .modal select {
+  width: 100%;
+  background: #000;
+  color: #00e5ff;
+  border: 1px solid #333;
+  padding: 4px 6px;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.modal .row { display: flex; gap: 6px; justify-content: flex-end; }
+.modal button {
+  background: linear-gradient(#4b6b78, #34525e);
+  color: #fff;
+  border: 1px solid #000;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.modal button.primary { background: linear-gradient(#2b7d3f, #1a5a2c); }
