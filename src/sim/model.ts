@@ -1,56 +1,59 @@
-/** Steam generation process model (v1).
+/** Steam generation process model (v2).
  *
- *  Live loop: 16LIC0011A — drum level controlled by BFW-A inlet valve.
- *  Other loops hold the static values from the reference screen so the
- *  operator sees a realistic snapshot; they become live in later iterations.
+ *  Live loops:
+ *    16LIC0011A  — reverse PID, BFW-A inlet, controls drum level
+ *    16LIC0011B  — reverse PID, BFW-B inlet (parallel trim), controls drum level
+ *    16SLIC0063  — direct  PID, D-1604 flash-drum drain valve
  *
- *  Mass balance (simplified, no swell/shrink yet):
- *    dV/dt = Q_bfwA + Q_bfwB - Q_steam - Q_blowdown
- *  Level% = V / V_drum * 100
+ *  Drum dynamics include a swell/shrink term:
+ *    level_PV = level_true + swell
+ *    swell(t+dt) = swell(t) * exp(-dt/τ) + K_swell * Δdemand
  *
- *  Valve characteristics: linear with %OP for teaching clarity (real valves
- *  are equal-percentage; we can swap later).
+ *  When both LIC0011A and LIC0011B are in AUTO with the same PV they drive
+ *  toward their individual SPs; differing SPs produce a natural load split
+ *  dictated by each controller's integral wind-up. Same plant behaviour as
+ *  two parallel level controllers on separate feedwater trains.
  */
 
 import { PidParams, PidState, newPidState, pidStep } from './pid';
-
-export interface Tag {
-  value: number;
-  eu: string;
-  lo?: number;
-  hi?: number;
-  hihi?: number;
-  lolo?: number;
-}
 
 export interface ControllerSnapshot {
   sp: number;
   pv: number;
   op: number;
-  mode: 'AUTO' | 'MAN' | 'CAS';
+  mode: 'AUTO' | 'MAN';
   eu: string;
 }
 
 export interface SimState {
-  t: number;  // sim seconds since start
+  t: number;
 
   // --- D-1601 steam drum ---
-  drumLevel: number;           // % (the live PV)
-  drumPressure: number;        // bar, held by PIC loops
-  steamDemand: number;         // m³/h equivalent - disturbance source
+  drumLevelTrue: number;       // mass-balance level (%)
+  drumSwell: number;           // transient swell/shrink offset (%)
+  drumPressure: number;        // bar
+  steamDemandNominal: number;  // m³/h
+  steamDemandBias: number;     // operator-added disturbance (m³/h)
 
-  // --- BFW inlets ---
-  bfwAValveOp: number;         // %  driven by 16LIC0011A
-  bfwBValveOp: number;         // %  fixed until B loop goes live
-  bfwAFlow: number;            // m³/h
+  bfwAFlow: number;
   bfwBFlow: number;
 
-  // --- Steam / pressure loop snapshots (static for v1) ---
-  pic0090a: ControllerSnapshot;   // main steam-export valve
-  pic0090b: ControllerSnapshot;   // vent / split-range B
-  slic0063: ControllerSnapshot;   // D-1604 flash drum level
+  // --- D-1604 flash drum ---
+  d1604Level: number;          // %
+  d1604InFlow: number;         // m³/h (small constant for v2)
 
-  // --- Drum triple-redundant LTs (2oo3 voted PV shown as LIC PV) ---
+  // --- Loops ---
+  lic0011a: ControllerSnapshot;
+  lic0011b: ControllerSnapshot;
+  pic0090a: ControllerSnapshot;
+  pic0090b: ControllerSnapshot;
+  slic0063: ControllerSnapshot;
+
+  pidA: PidState;
+  pidB: PidState;
+  pidSlic: PidState;
+
+  // --- Redundant LTs on D-1601 ---
   li0012a: number;
   li0012b: number;
   li0012c: number;
@@ -61,44 +64,57 @@ export interface SimState {
   pi0094: number;
   ai0011: number;
   lall0012Tripped: boolean;
-
-  // --- LIC0011A/B controller state & setpoints ---
-  lic0011a: ControllerSnapshot;
-  lic0011b: ControllerSnapshot;
-
-  pidA: PidState;
 }
 
 const pidParamsLIC_A: PidParams = {
-  kp: 1.8,
-  ti: 60,    // 60 s integral - typical for slow level loops
-  td: 0,
-  action: 'reverse',  // PV high => close inlet => OP down
-  opMin: 0,
-  opMax: 100,
+  kp: 1.8, ti: 60, td: 0, action: 'reverse', opMin: 0, opMax: 100,
+};
+const pidParamsLIC_B: PidParams = {
+  kp: 1.5, ti: 80, td: 0, action: 'reverse', opMin: 0, opMax: 100,
+};
+const pidParamsSLIC: PidParams = {
+  kp: 2.5, ti: 40, td: 0, action: 'direct',  opMin: 0, opMax: 100,
 };
 
-// drum geometry (teaching values, not plant-specific)
+// drum geometry
 const DRUM_VOLUME_M3 = 20;            // effective water holdup at 50%
-const BFW_MAX_FLOW = 180;             // m³/h at 100% valve
+const BFW_A_MAX = 180;                // m³/h at 100% valve
+const BFW_B_MAX = 90;                 // B trim valve is smaller
 const STEAM_NOMINAL = 150;            // m³/h liquid equivalent
-const BLOWDOWN = 2;                   // m³/h continuous
+const BLOWDOWN = 2;                   // m³/h
+
+// swell/shrink
+const SWELL_TAU = 10;                 // s
+const SWELL_K = 0.3;                  // %/(m³/h impulse)
+
+// D-1604 flash drum
+const FLASH_VOL = 4;                  // m³
+const FLASH_DRAIN_MAX = 12;           // m³/h at 100% valve
 
 export function createInitialState(): SimState {
   return {
     t: 0,
-    drumLevel: 54.7,
+    drumLevelTrue: 54.7,
+    drumSwell: 0,
     drumPressure: 45.18,
-    steamDemand: STEAM_NOMINAL,
+    steamDemandNominal: STEAM_NOMINAL,
+    steamDemandBias: 0,
 
-    bfwAValveOp: 52.2,
-    bfwBValveOp: 52.7,
     bfwAFlow: 0,
     bfwBFlow: 0,
 
+    d1604Level: 28.5,
+    d1604InFlow: 1.8,
+
+    lic0011a: { sp: 55.0, pv: 54.7, op: 52.2, mode: 'AUTO', eu: '%' },
+    lic0011b: { sp: 55.0, pv: 54.7, op: 52.7, mode: 'MAN',  eu: '%' },
     pic0090a: { sp: 45.22, pv: 45.18, op: 58.4, mode: 'AUTO', eu: 'bar' },
     pic0090b: { sp: 45.22, pv: 45.18, op: 0.0,  mode: 'AUTO', eu: 'bar' },
     slic0063: { sp: 28.5,  pv: 28.5,  op: 15.4, mode: 'AUTO', eu: '%'   },
+
+    pidA: newPidState(),
+    pidB: newPidState(),
+    pidSlic: newPidState(),
 
     li0012a: 33.22,
     li0012b: 39.85,
@@ -109,60 +125,78 @@ export function createInitialState(): SimState {
     pi0094: 20.76,
     ai0011: 65,
     lall0012Tripped: false,
-
-    lic0011a: { sp: 35.0, pv: 54.7, op: 52.2, mode: 'AUTO', eu: '%' },
-    lic0011b: { sp: 55.0, pv: 54.7, op: 52.7, mode: 'MAN',  eu: '%' },
-
-    pidA: newPidState(),
   };
 }
 
-/** Advance the simulation by `dt` seconds. */
 export function tick(s: SimState, dt: number): SimState {
-  const ns: SimState = { ...s, pidA: { ...s.pidA } };
+  const ns: SimState = {
+    ...s,
+    pidA: { ...s.pidA },
+    pidB: { ...s.pidB },
+    pidSlic: { ...s.pidSlic },
+  };
   ns.t = s.t + dt;
 
-  // --- mild periodic steam-demand wander so the operator sees the loop work
-  ns.steamDemand = STEAM_NOMINAL + Math.sin(ns.t / 45) * 6;
+  // --- total steam demand: nominal + small wander + operator bias
+  const wander = Math.sin(ns.t / 45) * 4;
+  const steamDemand = ns.steamDemandNominal + wander + ns.steamDemandBias;
+  const demandDelta =
+    steamDemand -
+    (s.steamDemandNominal + Math.sin(s.t / 45) * 4 + s.steamDemandBias);
 
-  // --- LIC0011A live PID
+  // --- LIC0011A
+  const pvA = s.drumLevelTrue + s.drumSwell;
   if (ns.lic0011a.mode === 'AUTO') {
-    const { op } = pidStep(
-      pidParamsLIC_A,
-      ns.pidA,
-      ns.lic0011a.sp,
-      ns.drumLevel,
-      dt,
-      52,
-    );
-    ns.lic0011a = { ...ns.lic0011a, op };
-    ns.bfwAValveOp = op;
+    const { op } = pidStep(pidParamsLIC_A, ns.pidA, ns.lic0011a.sp, pvA, dt, 52);
+    ns.lic0011a = { ...ns.lic0011a, op, pv: pvA };
   } else {
-    ns.bfwAValveOp = ns.lic0011a.op;
+    ns.lic0011a = { ...ns.lic0011a, pv: pvA };
   }
+  ns.bfwAFlow = (ns.lic0011a.op / 100) * BFW_A_MAX;
 
-  // --- flows from valve positions
-  ns.bfwAFlow = (ns.bfwAValveOp / 100) * BFW_MAX_FLOW;
-  ns.bfwBFlow = (ns.bfwBValveOp / 100) * BFW_MAX_FLOW * 0.5; // B is smaller trim
+  // --- LIC0011B
+  if (ns.lic0011b.mode === 'AUTO') {
+    const { op } = pidStep(pidParamsLIC_B, ns.pidB, ns.lic0011b.sp, pvA, dt, 50);
+    ns.lic0011b = { ...ns.lic0011b, op, pv: pvA };
+  } else {
+    ns.lic0011b = { ...ns.lic0011b, pv: pvA };
+  }
+  ns.bfwBFlow = (ns.lic0011b.op / 100) * BFW_B_MAX;
 
-  // --- drum level integration
+  // --- drum true-mass integration
   const qIn = ns.bfwAFlow + ns.bfwBFlow;
-  const qOut = ns.steamDemand + BLOWDOWN;
-  const dV = (qIn - qOut) * (dt / 3600);   // m³
-  const newLevel = ns.drumLevel + (dV / DRUM_VOLUME_M3) * 100;
-  ns.drumLevel = Math.max(0, Math.min(100, newLevel));
-  ns.lic0011a = { ...ns.lic0011a, pv: ns.drumLevel };
+  const qOut = steamDemand + BLOWDOWN;
+  const dV = (qIn - qOut) * (dt / 3600);
+  ns.drumLevelTrue = Math.max(
+    0, Math.min(100, s.drumLevelTrue + (dV / DRUM_VOLUME_M3) * 100)
+  );
 
-  // 2oo3 voted LTs — v1: all track drum level with small fixed offsets
-  ns.li0012a = ns.drumLevel - 21;   // the screenshot anomaly
-  ns.li0012b = ns.drumLevel - 15;
-  ns.li0012c = ns.drumLevel - 15.3;
+  // --- swell/shrink: exponential decay + demand-delta impulse
+  ns.drumSwell = s.drumSwell * Math.exp(-dt / SWELL_TAU) + SWELL_K * demandDelta;
 
-  ns.lall0012Tripped = [ns.li0012a, ns.li0012b, ns.li0012c]
-    .filter(v => v < 20).length >= 2;
+  // --- SLIC0063 (direct: PV up -> open drain)
+  const pvSlic = s.d1604Level;
+  if (ns.slic0063.mode === 'AUTO') {
+    const { op } = pidStep(pidParamsSLIC, ns.pidSlic, ns.slic0063.sp, pvSlic, dt, 15);
+    ns.slic0063 = { ...ns.slic0063, op, pv: pvSlic };
+  } else {
+    ns.slic0063 = { ...ns.slic0063, pv: pvSlic };
+  }
+  const drainFlow = (ns.slic0063.op / 100) * FLASH_DRAIN_MAX;
+  const d1604dV = (ns.d1604InFlow - drainFlow) * (dt / 3600);
+  ns.d1604Level = Math.max(
+    0, Math.min(100, s.d1604Level + (d1604dV / FLASH_VOL) * 100)
+  );
 
-  // other loops: held static for v1 (snapshot displayed)
-  // small harmless pressure wobble for visual life
+  // --- redundant LTs (offsets match reference screenshot anomaly for LI-A)
+  const pv = ns.drumLevelTrue + ns.drumSwell;
+  ns.li0012a = pv - 21;
+  ns.li0012b = pv - 15;
+  ns.li0012c = pv - 15.3;
+  ns.lall0012Tripped =
+    [ns.li0012a, ns.li0012b, ns.li0012c].filter(v => v < 20).length >= 2;
+
+  // --- pressure loops: small wobble (static in v2)
   const pWobble = Math.sin(ns.t / 30) * 0.03;
   ns.drumPressure = 45.18 + pWobble;
   ns.pic0090a = { ...ns.pic0090a, pv: ns.drumPressure };
