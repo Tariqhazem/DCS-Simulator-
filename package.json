@@ -3,13 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently -k -n vite,electron -c auto \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder --win portable"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,37 +16,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "concurrently": "^9.0.1",
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11",
-    "wait-on": "^8.0.1"
-  },
-  "build": {
-    "appId": "com.tariqhazem.dcssim",
-    "productName": "DCS Simulator",
-    "directories": {
-      "output": "release",
-      "buildResources": "electron/resources"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "asar": true,
-    "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": ["x64"]
-        }
-      ],
-      "artifactName": "DCS-Simulator-${version}-portable.${ext}"
-    },
-    "portable": {
-      "artifactName": "DCS-Simulator-${version}-portable.${ext}"
-    }
+    "vite": "^5.4.11"
   }
 }
