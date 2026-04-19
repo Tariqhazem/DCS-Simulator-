@@ -6,7 +6,7 @@
    - alarm state: red flash, yellow high/low, green OK */
 
 :root {
-  --bg: #a8a8a8;            /* Experion light field (Degasser) */
+  --bg: #c8c8c8;            /* Experion industrial gray (Degasser) */
   --panel: #2b2b2b;
   --panel-dk: #1a1a1a;
   --border: #000;
