@@ -135,44 +135,44 @@ export function DegasserGeometry() {
         <NavPill x={VB_W - 100} y={742} label="H-1001" w={80} />
       </g>
 
-      {/* ============ TOP PIPING (RHS STEAM → safe vent) ============ */}
-      <path d="M 80 180 H 780" stroke={STEAM} strokeWidth="3" fill="none" />
-      <path d="M 780 180 V 120 H 860" stroke={STEAM} strokeWidth="3" fill="none" />
+      {/* ============ TOP PIPING — RHS STEAM → safe vent ============ */}
+      {/* main horizontal steam header */}
+      <path d="M 80 180 H 720 V 120 H 860" stroke={STEAM} strokeWidth="3" fill="none" />
       <FlowArrow x={862} y={120} dir="right" color={STEAM} />
-
-      {/* 3-arrow vent symbols per screen */}
-      <g fontFamily="Consolas, monospace" fontSize="12" fontWeight="700" fill={STEAM}>
-        <text x={875} y={124}>{'>>>'}</text>
+      <g fontFamily="Consolas, monospace" fontSize="14" fontWeight="700" fill={STEAM}>
+        <text x={872} y={125}>{'\u25B6\u25B6\u25B6'}</text>
       </g>
+      {/* atmospheric vent riser (dashed) */}
+      <path d="M 800 120 V 70" stroke={STEAM} strokeWidth="2" fill="none" strokeDasharray="4,3" />
+      <text x={818} y={95}  fontFamily="Consolas, monospace" fontSize="10" fill="#111">ATM AT</text>
+      <text x={818} y={107} fontFamily="Consolas, monospace" fontSize="10" fill="#111">SAFE</text>
+      <text x={818} y={119} fontFamily="Consolas, monospace" fontSize="10" fill="#111">LOCATION</text>
+      {/* steam-header inline valves, placed UNDER the faceplate tag boxes */}
+      <BowtieValve x={290} y={180} orient="horizontal" color="#d83a3a" label="16UV0018" />
+      <BowtieValve x={500} y={180} orient="horizontal" color="#eab308" />
+      <BowtieValve x={720} y={150} orient="vertical"   color="#1aa141" />
 
-      {/* Vent to atmosphere */}
-      <path d="M 810 120 V 70" stroke={STEAM} strokeWidth="2" fill="none" strokeDasharray="4,3" />
-      <text x={820} y={95} fontFamily="Consolas, monospace" fontSize="10" fill="#111">ATM AT</text>
-      <text x={820} y={107} fontFamily="Consolas, monospace" fontSize="10" fill="#111">SAFE</text>
-      <text x={820} y={119} fontFamily="Consolas, monospace" fontSize="10" fill="#111">LOCATION</text>
+      {/* ============ REGASSER MAKE-UP (BFW cyan) — feeds drum top ============ */}
+      <path d="M 80 270 H 700 V 365" stroke={BFW} strokeWidth="3" fill="none" />
+      <FlowArrow x={700} y={363} dir="down" color={BFW} />
+      <BowtieValve x={400} y={270} orient="horizontal" color="#1aa141" />
 
-      {/* inline top-line valves (16UV0018 on RHS STEAM) */}
-      <BowtieValve x={270} y={180} orient="horizontal" color="#d83a3a" label="16UV0018" />
-      <BowtieValve x={420} y={180} orient="horizontal" color="#eab308" />
-      <BowtieValve x={770} y={180} orient="horizontal" color="#1aa141" />
-      <BowtieValve x={820} y={120} orient="vertical"   color="#1aa141" />
+      {/* ============ FLASH STEAM (red) — merges into drum dome ============ */}
+      <path d="M 80 340 H 360 V 345 H 520 V 300 H 700" stroke={STEAM} strokeWidth="3" fill="none" />
+      <BowtieValve x={250} y={340} orient="horizontal" color="#1aa141" />
 
-      {/* ============ REGASSER MAKE-UP (BFW) ============ */}
-      <path d="M 80 270 H 640 V 330" stroke={BFW} strokeWidth="3" fill="none" />
-      <FlowArrow x={640} y={328} dir="down" color={BFW} />
-      <BowtieValve x={375} y={270} orient="horizontal" color="#1aa141" />
+      {/* ============ CWS (purple) — goes UP then DOWN into X-1602 top ============ */}
+      <path d="M 80 475 H 340 V 590" stroke={CW} strokeWidth="3" fill="none" />
+      <FlowArrow x={340} y={588} dir="down" color={CW} />
+      <BowtieValve x={200} y={475} orient="horizontal" color="#d83a3a" label="16UV0037" />
 
-      {/* ============ FLASH STEAM line ============ */}
-      <path d="M 80 340 H 340 V 330 H 640" stroke={STEAM} strokeWidth="3" fill="none" />
-      <BowtieValve x={290} y={340} orient="horizontal" color="#1aa141" />
+      {/* ============ DW (blue) — into X-1602 second filter ============ */}
+      <path d="M 80 515 H 160 V 590" stroke={DW} strokeWidth="2" fill="none" />
 
-      {/* ============ CWS / DW lines into X-1602 ============ */}
-      <path d="M 80 475 H 260 V 600" stroke={CW} strokeWidth="3" fill="none" />
-      <path d="M 80 515 H 230 V 600" stroke={DW} strokeWidth="2" fill="none" />
-      <BowtieValve x={310} y={475} orient="horizontal" color="#d83a3a" label="16UV0037" />
-
-      {/* 16UV0014 on drum inlet (left side of D-1603, near top) */}
-      <BowtieValve x={500} y={445} orient="horizontal" color="#eab308" label="16UV0014" />
+      {/* ============ Left-side drum inlet via 16UV0014 ============ */}
+      <path d="M 380 475 H 560 V 430 H 615" stroke={CW} strokeWidth="3" fill="none" />
+      <FlowArrow x={615} y={430} dir="right" color={CW} />
+      <BowtieValve x={470} y={475} orient="horizontal" color="#eab308" label="16UV0014" />
 
       {/* ============ D-1603 HORIZONTAL VESSEL (centre) ============ */}
       {/* vapor dome stack extending up */}
@@ -213,21 +213,27 @@ export function DegasserGeometry() {
         </g>
       ))}
 
-      {/* X-1602 outlet manifold */}
-      <path d="M 200 720 V 850 H 560 V 620 H 640" stroke={CW} strokeWidth="3" fill="none" />
-      <path d="M 200 720 V 830 H 580 V 660 H 640" stroke={DW} strokeWidth="2" fill="none" />
+      {/* X-1602 bottom header → column feed (purple) */}
+      <path d="M 200 800 V 870 H 520" stroke={CW} strokeWidth="3" fill="none" />
+      <path d="M 200 800 V 860 H 540 V 700 H 545" stroke={CW} strokeWidth="3" fill="none" />
 
       {/* ============ CENTRIFUGAL PUMPS ============ */}
       <CentrifugalPump cx={1040} cy={500} bodyFill="#d83a3a" running={false} label="P-1601A" />
       <CentrifugalPump cx={1040} cy={600} bodyFill="#1aa141" running={true}  label="P-1601B" />
 
-      {/* ============ Pump manifold to BFW export ============ */}
-      <path d="M 960 485 V 500 H 1018" stroke={BFW} strokeWidth="3" fill="none" />
-      <path d="M 960 485 V 600 H 1018" stroke={BFW} strokeWidth="3" fill="none" />
-      <path d="M 1080 500 H 1180 V 570 H 1500" stroke={BFW} strokeWidth="3" fill="none" />
-      <path d="M 1080 600 H 1180 V 570" stroke={BFW} strokeWidth="3" fill="none" />
-      <BowtieValve x={1460} y={570} orient="horizontal" color="#1aa141" />
-      <FlowArrow x={1496} y={570} dir="right" color={BFW} />
+      {/* Drum bottom → pump suction headers */}
+      <path d="M 800 485 V 520 H 1018" stroke={BFW} strokeWidth="3" fill="none" />
+      <path d="M 880 485 V 620 H 1018" stroke={BFW} strokeWidth="3" fill="none" />
+
+      {/* Pump discharges → combined header → BFW export */}
+      <path d="M 1080 485 H 1160 V 540 H 1500" stroke={BFW} strokeWidth="3" fill="none" />
+      <path d="M 1080 585 H 1160 V 540"        stroke={BFW} strokeWidth="3" fill="none" />
+      <BowtieValve x={1460} y={540} orient="horizontal" color="#1aa141" />
+      <FlowArrow x={1496} y={540} dir="right" color={BFW} />
+
+      {/* Column-to-CSS outlet (purple) */}
+      <path d="M 565 775 H 800" stroke={CW} strokeWidth="3" fill="none" />
+      <FlowArrow x={800} y={775} dir="right" color={CW} />
 
       {/* ============ Bottom packed column ============ */}
       <g>
@@ -238,10 +244,9 @@ export function DegasserGeometry() {
         <line x1={525} y1={735} x2={565} y2={735} stroke="#000" strokeDasharray="2,2" />
       </g>
 
-      {/* column bottom to CSS */}
-      <path d="M 565 760 H 800" stroke={CW} strokeWidth="3" fill="none" />
-      <text x={810} y={756} fontFamily="Consolas, monospace" fontSize="12" fontWeight="700" fill={CW}>CSS</text>
-      <text x={810} y={775} fontFamily="Consolas, monospace" fontSize="18" fontWeight="700" fill={CW}>Y</text>
+      {/* CSS Y label at outlet */}
+      <text x={810} y={770} fontFamily="Consolas, monospace" fontSize="12" fontWeight="700" fill={CW}>CSS</text>
+      <text x={810} y={789} fontFamily="Consolas, monospace" fontSize="18" fontWeight="700" fill={CW}>Y</text>
 
       {/* ============ Static operator-info tag boxes ============ */}
       <g fontFamily="Consolas, monospace" fontSize="10" fill="#fff">
