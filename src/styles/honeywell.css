@@ -6,12 +6,12 @@
    - alarm state: red flash, yellow high/low, green OK */
 
 :root {
-  --bg: #4a7a8c;            /* Experion teal/slate field */
+  --bg: #a8a8a8;            /* Experion light field (Degasser) */
   --panel: #2b2b2b;
   --panel-dk: #1a1a1a;
   --border: #000;
-  --text: #e6e6e6;
-  --text-dim: #b8b8b8;
+  --text: #1a1a1a;
+  --text-dim: #444;
 
   --sp: #00e64d;            /* green - setpoint */
   --pv: #00e5ff;            /* cyan - process variable */
@@ -173,6 +173,17 @@ html, body, #root {
 .faceplate .fp-row.op .val { color: var(--op); text-align: right; }
 .faceplate .fp-row .unit { color: #9fb7bf; text-align: left; }
 .faceplate.live { outline: 1px solid #00e5ff; }
+.faceplate .fp-bar {
+  margin: 1px 4px 2px;
+  height: 4px;
+  background: #1a1a1a;
+  border: 1px solid #000;
+  position: relative;
+}
+.faceplate .fp-bar-fill {
+  height: 100%;
+  background: var(--pv);
+}
 
 /* ---------- indicator (read-only tag box) ---------- */
 .indicator {
@@ -221,15 +232,21 @@ html, body, #root {
 }
 
 .label-text {
-  fill: #e6e6e6;
+  fill: #1a1a1a;
   font-family: 'Consolas', monospace;
   font-size: 11px;
 }
 .label-tag {
+  fill: #1a1a1a;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+.label-tag-light {
   fill: #ffffff;
   font-family: 'Consolas', monospace;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ---------- placeholder pages ---------- */
